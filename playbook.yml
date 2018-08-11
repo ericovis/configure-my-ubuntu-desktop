@@ -1,30 +1,87 @@
+---
 - hosts: localhost
-  become: yes
-  vars: []
+  become: true
+  vars:
+    username: ericovis
+    atom_ver: 1.29.0
+    docker_channel: edge
   tasks:
-    - name: Ensure APT cache is updated
+    - name: Ensure needed APT keys are present
+      apt_key:
+        url: "{{ item }}"
+        state: present
+      with_items:
+        - https://download.docker.com/linux/ubuntu/gpg
+        - https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+
+    - name: Ensure needed APT repositories are present
+      apt_repository:
+        repo: "{{ item }}"
+        state: present
+      with_items:
+        - "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} {{ docker_channel }}"
+        - "deb https://deb.nodesource.com/node_8.x {{ ansible_distribution_release }} main"
+        - "deb-src https://deb.nodesource.com/node_8.x {{ ansible_distribution_release }} main"
+        - "ppa:snwh/ppa"
+    - name: Ensure apt cache is updated
       apt:
-        update_cache: yes
-        cache_valid_time: 300
-    - name: Ensure that the base APT packages are present
+        update_cache: true
+    - name: Ensure needed packages are installed
       apt:
         name: "{{ item }}"
         state: present
       with_items:
         - build-essential
-        - gcc
-        - g++
-        - cmake
+        - git
         - python-dev
-        - python-pip
         - python3
         - python3-dev
+        - python-pip
         - python3-pip
-        - libssl-dev
-        - redis-tools
-        - mysql-client
-        - postgresql-client
+        - python3-dateutil
+        - golang-go
+        - nodejs
+        - gcc
+        - g++
         - curl
+        - apt-transport-https
+        - ca-certificates
+        - software-properties-common
         - wget
-        - git
-    - name: Enrure that the needed APT keys are present
+        - gconf2
+        - gconf-service
+        - gimp
+        - shotwell
+        - inkscape
+        - gnome-tweak-tool
+        - chrome-gnome-shell
+        - docker-ce
+        - arc-theme
+        - paper-icon-theme
+    - name: Ensure that needed DEBs are installed
+      apt:
+        deb: "{{ item }}"
+      with_items:
+        - "https://github.com/atom/atom/releases/download/v{{ atom_ver }}/atom-amd64.deb"
+        - "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
+    - name: "Add {{ username }} to the Docker group"
+      user:
+        name: "{{ username }}"
+        groups: docker
+        append: true
+    - name: Ensure that Docker is enabled at startup and started
+      service:
+        name: docker
+        state: started
+        enabled: true
+    - name: Ensure needed PIP packages are available in the latest version
+      pip:
+        name: "{{ item }}"
+        state: latest
+        executable: pip3
+      with_items:
+        - pip
+        - pipenv
+        - pycodestyle
+        - awscli
+        - awsebcli
