@@ -74,10 +74,10 @@
         name: docker
         state: started
         enabled: true
-    - name: Ensure needed PIP packages are available in the latest version
+    - name: Ensure needed PIP packages are present
       pip:
         name: "{{ item }}"
-        state: latest
+        state: present
         executable: pip3
       with_items:
         - pip
@@ -85,3 +85,11 @@
         - pycodestyle
         - awscli
         - awsebcli
+    - name: Ensure needed NPM packages are present
+      npm:
+        name: "{{ item }}"
+        state: present
+        global: true
+      with_items:
+        - serverless
+        - yaml-js
